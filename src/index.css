@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --bg-color: #050505;
+  --surface-color: #121212;
+  --surface-color-light: #1E1E1E;
+  
+  --text-primary: #FFFFFF;
+  --text-secondary: #A0A0A0;
+  
+  /* Accents */
+  --accent-neon-green: #39FF14;
+  --accent-neon-green-dim: rgba(57, 255, 20, 0.2);
+  --accent-purple: #9D4EDD;
+  --accent-purple-dim: rgba(157, 78, 221, 0.2);
+  
+  --danger-red: #FF3366;
+  --danger-red-dim: rgba(255, 51, 102, 0.2);
+
+  /* Glass Effects */
+  --glass-bg: rgba(30, 30, 30, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.05);
+
+  /* Typography */
+  --font-family: 'Inter', sans-serif;
+  
+  /* Borders & Radius */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+}
+
+body.light-theme {
+  --bg-color: #F3F4F6;
+  --surface-color: #FFFFFF;
+  --surface-color-light: #E5E7EB;
+  
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  
+  --accent-neon-green: #10B981;
+  --danger-red: #EF4444;
+
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent; /* Remove blue highlight on mobile */
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  line-height: 1.5;
+  overflow: hidden; /* App-like feel, scroll inside container */
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul {
+  list-style: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+/* Typography utilities */
+.h1 { font-size: 1.5rem; font-weight: 700; }
+.h2 { font-size: 1.25rem; font-weight: 600; }
+.h3 { font-size: 1.125rem; font-weight: 600; }
+.body-text { font-size: 1rem; font-weight: 400; }
+.small-text { font-size: 0.875rem; font-weight: 400; color: var(--text-secondary); }
+
+/* Text colors */
+.text-green { color: var(--accent-neon-green); }
+.text-purple { color: var(--accent-purple); }
+.text-red { color: var(--danger-red); }
