@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import CurrencyInput from '../CurrencyInput';
 
-export default function ExtraExpenseForm({ onSubmit }) {
+export default function ExtraExpenseForm({ onSubmit, incomeSources }) {
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
+  const [sourceId, setSourceId] = useState(incomeSources?.[0]?.id || 'source-default');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -11,7 +12,8 @@ export default function ExtraExpenseForm({ onSubmit }) {
     
     onSubmit({
       name,
-      amount: amount
+      amount: amount,
+      sourceId: sourceId
     });
     
     setName('');
@@ -42,6 +44,25 @@ export default function ExtraExpenseForm({ onSubmit }) {
         />
       </div>
 
+      {incomeSources && incomeSources.length > 1 && (
+        <div className="flex-col gap-sm">
+          <label className="small-text">Banco / Origem</label>
+          <div style={{ position: 'relative' }}>
+            <select 
+              value={sourceId}
+              onChange={(e) => setSourceId(e.target.value)}
+              style={styles.select}
+            >
+              {incomeSources.map(src => (
+                <option key={src.id} value={src.id} style={{ background: 'var(--surface-color)' }}>
+                  {src.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
       <button type="submit" style={styles.submitBtn}>
         Registrar Saída Extra
       </button>
@@ -59,6 +80,23 @@ const styles = {
     fontSize: '16px',
     border: '1px solid rgba(255,255,255,0.1)'
   },
+  select: {
+    width: '100%',
+    padding: '16px',
+    backgroundColor: 'var(--surface-color-light)',
+    borderRadius: 'var(--radius-sm)',
+    color: 'var(--text-primary)',
+    fontSize: '16px',
+    border: '1px solid rgba(255,255,255,0.1)',
+    outline: 'none',
+    cursor: 'pointer',
+    backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'rgba(255,255,255,0.5)\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E")',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 16px center',
+    backgroundSize: '16px',
+    appearance: 'none',
+    paddingRight: '40px'
+  },
   submitBtn: {
     width: '100%',
     padding: '16px',
@@ -67,6 +105,8 @@ const styles = {
     fontWeight: '600',
     borderRadius: 'var(--radius-sm)',
     marginTop: 'var(--space-md)',
-    fontSize: '16px'
+    fontSize: '16px',
+    border: 'none',
+    cursor: 'pointer'
   }
 };

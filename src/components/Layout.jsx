@@ -6,21 +6,20 @@ export default function Layout({ children, currentView, setView, onFabAction, on
   const { logout } = useAuth();
 
   return (
-    <div className="app-container" style={{ paddingTop: '70px' }}>
+    <div className="app-container">
       {/* Global Top Bar */}
       <header style={{ 
-        position: 'fixed', 
-        top: 0, left: 0, right: 0, 
-        height: '70px',
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        padding: '0 20px',
-        zIndex: 50,
+        padding: 'calc(env(safe-area-inset-top, 0px) + 8px) 20px 8px 20px',
         background: '#0A0A0A',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
         borderRadius: '0 0 16px 16px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+        width: '100%',
+        minHeight: '70px',
+        boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center' }}>
           <img src="/logo.png" alt="EmDia Logo" style={{ height: '56px', width: 'auto', objectFit: 'contain' }} />

@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'logo.png'],
+      includeAssets: ['favicon.png', 'logo.png', 'pwa.png'],
       manifest: {
         name: 'EmDia - Controle Financeiro',
         short_name: 'EmDia',
@@ -17,12 +17,12 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'logo.png',
+            src: 'pwa.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'logo.png',
+            src: 'pwa.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'

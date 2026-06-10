@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { useFinanceData } from '../hooks/useFinanceData';
 import { Share2, Download, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
-export default function RelatoriosView() {
-  const { data } = useFinanceData();
+export default function RelatoriosView({ data }) {
   const [expandedGroups, setExpandedGroups] = useState({});
   
   // 1. Coletar todos os meses que possuem algum histórico (mais o mês atual)
@@ -94,6 +92,31 @@ export default function RelatoriosView() {
     const totalExtra = extraExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     const totalGeral = totalPaid + totalExtra;
 
+    // Calculate spent per bank for this month
+    const bankSpending = (data.incomeSources || []).map(src => {
+      const billsPaid = paidAccounts.filter(acc => {
+        const paidVal = acc.paidMonths[monthKey];
+        if (src.id === 'source-default') {
+          return paidVal === true || paidVal === 'source-default';
+        }
+        return paidVal === src.id;
+      });
+      
+      const extraPaid = extraExpenses.filter(exp => {
+        if (src.id === 'source-default') {
+          return !exp.sourceId || exp.sourceId === 'source-default';
+        }
+        return exp.sourceId === src.id;
+      });
+
+      const totalSpent = billsPaid.reduce((sum, acc) => sum + acc.amount, 0) +
+                         extraPaid.reduce((sum, exp) => sum + exp.amount, 0);
+      return {
+        ...src,
+        totalSpent
+      };
+    }).filter(b => b.totalSpent > 0);
+
     // Agrupamento
     const categoriesWithAccounts = (data.categories || []).map(cat => ({
       ...cat,
@@ -121,6 +144,25 @@ export default function RelatoriosView() {
             <span className="body-text">Total Gasto:</span>
             <span className="h2 text-red">R$ {totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
+          {bankSpending.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px' }}>
+              <span className="small-text" style={{ fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>Gastos por Conta/Origem:</span>
+              {bankSpending.map(bank => (
+                <div key={bank.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: bank.color || '#A0A0A0'
+                    }} />
+                    <span style={{ color: 'var(--text-secondary)' }}>{bank.name}</span>
+                  </div>
+                  <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>R$ {bank.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Contas Fixas */}

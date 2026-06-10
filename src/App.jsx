@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import Layout from './components/Layout';
 import HomeView from './views/HomeView';
@@ -13,14 +13,28 @@ import { useFinanceData } from './hooks/useFinanceData';
 import { useAuth } from './contexts/AuthContext';
 import LoginView from './views/LoginView';
 import RegisterView from './views/RegisterView';
+import PWATutorial from './components/PWATutorial';
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
   const [activeModal, setActiveModal] = useState(null); // 'category', 'account', 'extra', 'settings', null
   const [authView, setAuthView] = useState('login'); // 'login' | 'register'
   
-  const { data, addCategory, addExtraExpense, addAccount, updateUserName, updateBalance } = useFinanceData();
+  const { data, addCategory, addExtraExpense, addAccount, updateUserName, updateBalance, updateIncomeSources, toggleAccountPaidStatus } = useFinanceData();
   const { currentUser } = useAuth();
+
+  useEffect(() => {
+    if (currentUser) {
+      const shown = localStorage.getItem('emdia_pwa_prompt_shown');
+      if (!shown) {
+        const timer = setTimeout(() => {
+          setActiveModal('tutorial');
+          localStorage.setItem('emdia_pwa_prompt_shown', 'true');
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentUser]);
 
   if (!currentUser) {
     if (authView === 'login') return <LoginView onNavigate={setAuthView} />;
@@ -36,13 +50,13 @@ function App() {
   const renderView = () => {
     switch(currentView) {
       case 'home':
-        return <HomeView onOpenSettings={() => setActiveModal('settings')} />;
+        return <HomeView onOpenSettings={() => setActiveModal('settings')} data={data} />;
       case 'gastos':
-        return <GastosView />;
+        return <GastosView data={data} toggleAccountPaidStatus={toggleAccountPaidStatus} />;
       case 'relatorios':
-        return <RelatoriosView />;
+        return <RelatoriosView data={data} />;
       default:
-        return <HomeView />;
+        return <HomeView data={data} />;
     }
   };
 
@@ -72,10 +86,13 @@ function App() {
         onClose={closeModal} 
         title="Saída Extra"
       >
-        <ExtraExpenseForm onSubmit={(expenseData) => {
-          addExtraExpense(expenseData);
-          closeModal();
-        }} />
+        <ExtraExpenseForm 
+          incomeSources={data.incomeSources}
+          onSubmit={(expenseData) => {
+            addExtraExpense(expenseData);
+            closeModal();
+          }} 
+        />
       </Modal>
 
       <Modal 
@@ -98,14 +115,24 @@ function App() {
         title="Configurações"
       >
         <SettingsForm 
-          initialName={data.userName}
+          initialSources={data.incomeSources}
           initialBalance={data.grossBalance}
           onSubmit={(settingsData) => {
-            updateUserName(settingsData.name);
-            updateBalance(settingsData.balance);
+            if (settingsData.sources) {
+              updateIncomeSources(settingsData.sources);
+            }
             closeModal();
           }} 
+          onOpenTutorial={() => setActiveModal('tutorial')}
         />
+      </Modal>
+
+      <Modal 
+        isOpen={activeModal === 'tutorial'} 
+        onClose={closeModal} 
+        title="Como Instalar o App"
+      >
+        <PWATutorial onClose={closeModal} />
       </Modal>
     </Layout>
   );

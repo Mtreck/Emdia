@@ -96,6 +96,10 @@ export default function RegisterView({ onNavigate }) {
             </div>
           </div>
 
+          <p className="small-text" style={{ fontSize: '11px', marginTop: '8px', marginBottom: '8px', lineHeight: '1.4', opacity: 0.75 }}>
+            💡 <strong>Dica de Bancos:</strong> Se você recebe todo seu salário em um só banco, coloque o valor total aqui. Caso receba em mais de um banco, coloque a soma total aqui agora e, logo após criar a conta, você poderá dividi-los e dar cores a cada um no menu de Ajustes!
+          </p>
+
           <button type="submit" style={styles.primaryBtn}>
             Criar Conta
           </button>

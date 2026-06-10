@@ -1,10 +1,8 @@
 import React from 'react';
-import { useFinanceData } from '../hooks/useFinanceData';
 import { ArrowUpRight, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function HomeView({ onOpenSettings }) {
-  const { data } = useFinanceData();
+export default function HomeView({ onOpenSettings, data }) {
   const { currentUser, logout } = useAuth();
   
   const profileName = currentUser?.profile?.name || data.userName;
@@ -28,6 +26,33 @@ export default function HomeView({ onOpenSettings }) {
   const totalExtraExpenses = extraExpensesThisMonth.reduce((sum, exp) => sum + exp.amount, 0);
   const totalSpent = totalPaidAccounts + totalExtraExpenses;
   const availableBalance = profileGrossBalance - totalSpent;
+
+  // Calculate Balance per Bank
+  const sourcesWithBalances = (data.incomeSources || []).map(src => {
+    const billsPaid = paidAccountsThisMonth.filter(acc => {
+      const paidVal = acc.paidMonths[currentMonthKey];
+      if (src.id === 'source-default') {
+        return paidVal === true || paidVal === 'source-default';
+      }
+      return paidVal === src.id;
+    });
+    
+    const extraPaid = extraExpensesThisMonth.filter(exp => {
+      if (src.id === 'source-default') {
+        return !exp.sourceId || exp.sourceId === 'source-default';
+      }
+      return exp.sourceId === src.id;
+    });
+
+    const spent = billsPaid.reduce((sum, acc) => sum + acc.amount, 0) +
+                  extraPaid.reduce((sum, exp) => sum + exp.amount, 0);
+                  
+    return {
+      ...src,
+      available: src.balance - spent,
+      spent
+    };
+  });
 
   // Calculate Top Category
   const categorySpending = {};
@@ -87,6 +112,22 @@ export default function HomeView({ onOpenSettings }) {
             R$ {availableBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </h1>
         </div>
+
+        {/* Horizontal scroll of banks */}
+        {sourcesWithBalances.length > 0 && (
+          <div className="no-scrollbar" style={styles.scrollContainer}>
+            {sourcesWithBalances.map(src => (
+              <div key={src.id} className="glass" style={{ ...styles.bankMiniCard, borderLeft: `4px solid ${src.color || '#A0A0A0'}` }}>
+                <span className="small-text" style={{ color: 'var(--text-secondary)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {src.name}
+                </span>
+                <span style={{ fontSize: '16px', fontWeight: '700', color: src.available < 0 ? 'var(--danger-red)' : 'var(--text-primary)', marginTop: '4px' }}>
+                  R$ {src.available.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </header>
 
       {/* Chart Section */}
@@ -180,5 +221,23 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  scrollContainer: {
+    display: 'flex',
+    overflowX: 'auto',
+    gap: '12px',
+    padding: '4px 0 12px 0',
+    width: '100%',
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
+    WebkitOverflowScrolling: 'touch',
+    marginTop: '8px'
+  },
+  bankMiniCard: {
+    flex: '0 0 145px',
+    padding: '12px 14px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center'
   }
 };

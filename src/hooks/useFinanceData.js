@@ -4,11 +4,14 @@ import { useAuth } from '../contexts/AuthContext';
 const initialData = {
   userName: 'Nome',
   grossBalance: 0,
+  incomeSources: [
+    { id: 'source-default', name: 'Saldo Geral', balance: 0, color: '#39FF14' }
+  ],
   categories: [
     { id: 'cat-default', name: 'Saídas Extras', color: 'var(--danger-red)' }
   ],
-  accounts: [], // { id, name, categoryId, type: 'recorrente'|'parcelada', amount, dueDay, installments: { total, current }, paidMonths: { 'YYYY-MM': true } }
-  expenses: [] // { id, name, amount, date }
+  accounts: [], // { id, name, categoryId, type: 'recorrente'|'parcelada', amount, dueDay, installments: { total, current }, paidMonths: { 'YYYY-MM': sourceId } }
+  expenses: [] // { id, name, amount, date, sourceId }
 };
 
 export function useFinanceData() {
@@ -22,7 +25,19 @@ export function useFinanceData() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      setData({ ...initialData, ...parsed, accounts: parsed.accounts || [], expenses: parsed.expenses || [] });
+      let migratedSources = parsed.incomeSources || [];
+      if (migratedSources.length === 0) {
+        migratedSources = [
+          { id: 'source-default', name: 'Saldo Geral', balance: parsed.grossBalance || 0, color: '#39FF14' }
+        ];
+      }
+      setData({ 
+        ...initialData, 
+        ...parsed, 
+        incomeSources: migratedSources,
+        accounts: parsed.accounts || [], 
+        expenses: parsed.expenses || [] 
+      });
     } else {
       setData(initialData);
     }
@@ -73,22 +88,39 @@ export function useFinanceData() {
   };
 
   const updateBalance = (balance) => {
-    setData(prev => ({ ...prev, grossBalance: balance }));
+    setData(prev => ({ 
+      ...prev, 
+      grossBalance: balance,
+      incomeSources: prev.incomeSources.map(s => s.id === 'source-default' ? { ...s, balance } : s)
+    }));
+  };
+
+  const updateIncomeSources = (sources) => {
+    const totalBalance = sources.reduce((sum, s) => sum + Number(s.balance || 0), 0);
+    setData(prev => ({
+      ...prev,
+      incomeSources: sources,
+      grossBalance: totalBalance
+    }));
   };
 
   // Helper to mark an account as paid for a specific month (e.g., '2026-06')
-  const toggleAccountPaidStatus = (accountId, monthKey) => {
+  const toggleAccountPaidStatus = (accountId, monthKey, sourceId) => {
     setData(prev => ({
       ...prev,
       accounts: (prev.accounts || []).map(acc => {
         if (acc.id === accountId) {
-          const isPaid = !!acc.paidMonths[monthKey];
+          const paidMonths = { ...acc.paidMonths };
+          if (paidMonths[monthKey]) {
+            // Unpay
+            delete paidMonths[monthKey];
+          } else {
+            // Pay and assign source
+            paidMonths[monthKey] = sourceId || 'source-default';
+          }
           return {
             ...acc,
-            paidMonths: {
-              ...acc.paidMonths,
-              [monthKey]: !isPaid
-            }
+            paidMonths
           };
         }
         return acc;
@@ -103,6 +135,7 @@ export function useFinanceData() {
     addExtraExpense,
     updateUserName,
     updateBalance,
+    updateIncomeSources,
     toggleAccountPaidStatus
   };
 }

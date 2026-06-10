@@ -1,9 +1,9 @@
-import React from 'react';
-import { useFinanceData } from '../hooks/useFinanceData';
+import React, { useState } from 'react';
 import { Check, CreditCard, Calendar } from 'lucide-react';
+import Modal from '../components/Modal';
 
-export default function GastosView() {
-  const { data, toggleAccountPaidStatus } = useFinanceData();
+export default function GastosView({ data, toggleAccountPaidStatus }) {
+  const [payingAccount, setPayingAccount] = useState(null);
   
   // Define current month key: "2026-06"
   const now = new Date();
@@ -23,6 +23,19 @@ export default function GastosView() {
       accounts: (data.accounts || []).filter(acc => acc.categoryId === cat.id)
     };
   }).filter(cat => cat.accounts.length > 0);
+
+  const handlePayClick = (acc) => {
+    if (isPaid(acc)) {
+      // If already paid, toggle unpaid immediately
+      toggleAccountPaidStatus(acc.id, currentMonthKey);
+    } else if (data.incomeSources && data.incomeSources.length > 1) {
+      // Prompt user to select which bank to pay from
+      setPayingAccount(acc);
+    } else {
+      // Pay with default bank source
+      toggleAccountPaidStatus(acc.id, currentMonthKey, data.incomeSources?.[0]?.id || 'source-default');
+    }
+  };
 
   return (
     <div className="animate-fade-in flex-col gap-lg" style={{ paddingBottom: '20px', paddingTop: '16px' }}>
@@ -71,7 +84,7 @@ export default function GastosView() {
                     </div>
                     
                     <button 
-                      onClick={() => toggleAccountPaidStatus(acc.id, currentMonthKey)}
+                      onClick={() => handlePayClick(acc)}
                       style={{
                         ...styles.payBtn,
                         backgroundColor: paid ? 'var(--accent-neon-green-dim)' : 'var(--danger-red)',
@@ -98,6 +111,68 @@ export default function GastosView() {
           <span className="body-text">Nenhuma conta cadastrada ainda.</span>
         </div>
       )}
+
+      {/* Payment Bank Picker Modal */}
+      {payingAccount && (
+        <Modal 
+          isOpen={!!payingAccount} 
+          onClose={() => setPayingAccount(null)} 
+          title="Selecione o Banco"
+        >
+          <div className="flex-col gap-md" style={{ padding: '4px 0' }}>
+            <p className="small-text">De qual conta deseja deduzir o valor de <strong style={{ color: '#fff' }}>{payingAccount.name}</strong>?</p>
+            <div className="flex-col gap-sm" style={{ marginTop: '12px' }}>
+              {(data.incomeSources || []).map(src => {
+                // Calculate bank available balance
+                const billsPaid = (data.accounts || []).filter(a => {
+                  const paidVal = a.paidMonths && a.paidMonths[currentMonthKey];
+                  if (src.id === 'source-default') {
+                    return paidVal === true || paidVal === 'source-default';
+                  }
+                  return paidVal === src.id;
+                });
+                
+                const extraPaid = (data.expenses || []).filter(e => {
+                  const isCurrentMonth = e.createdAt && e.createdAt.startsWith(currentMonthKey);
+                  if (!isCurrentMonth) return false;
+                  if (src.id === 'source-default') {
+                    return !e.sourceId || e.sourceId === 'source-default';
+                  }
+                  return e.sourceId === src.id;
+                });
+
+                const spent = billsPaid.reduce((sum, a) => sum + a.amount, 0) +
+                              extraPaid.reduce((sum, e) => sum + e.amount, 0);
+                const currentAvailable = src.balance - spent;
+
+                return (
+                  <button
+                    key={src.id}
+                    onClick={() => {
+                      toggleAccountPaidStatus(payingAccount.id, currentMonthKey, src.id);
+                      setPayingAccount(null);
+                    }}
+                    style={styles.bankSelectBtn}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        backgroundColor: src.color || '#A0A0A0'
+                      }} />
+                      <span style={{ fontWeight: '600' }}>{src.name}</span>
+                    </div>
+                    <span style={{ color: currentAvailable < 0 ? 'var(--danger-red)' : 'var(--accent-neon-green)', fontWeight: '600' }}>
+                      R$ {currentAvailable.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -115,6 +190,22 @@ const styles = {
     borderRadius: 'var(--radius-full)',
     fontWeight: '600',
     fontSize: '12px',
-    transition: 'all 0.3s ease'
+    transition: 'all 0.3s ease',
+    border: 'none',
+    cursor: 'pointer'
+  },
+  bankSelectBtn: {
+    width: '100%',
+    padding: '16px',
+    backgroundColor: 'var(--surface-color-light)',
+    color: 'var(--text-primary)',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    cursor: 'pointer',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    transition: 'all 0.2s ease',
+    fontSize: '15px'
   }
 };
