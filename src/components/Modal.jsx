@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export default function Modal({ isOpen, onClose, title, children }) {
@@ -16,14 +17,14 @@ export default function Modal({ isOpen, onClose, title, children }) {
 
   if (!show && !isOpen) return null;
 
-  return (
+  return createPortal(
     <>
       <div 
         style={{ ...styles.overlay, opacity: isOpen ? 1 : 0 }} 
         onClick={onClose} 
       />
       <div 
-        className="glass"
+        className="glass animate-slide-up"
         style={{ 
           ...styles.modal, 
           transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
@@ -40,20 +41,21 @@ export default function Modal({ isOpen, onClose, title, children }) {
           {children}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
 
 const styles = {
   overlay: {
-    position: 'absolute',
+    position: 'fixed',
     top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    zIndex: 40,
+    zIndex: 1000,
     transition: 'opacity 0.3s ease',
   },
   modal: {
-    position: 'absolute',
+    position: 'fixed',
     bottom: 0, left: 0, right: 0,
     maxHeight: '90vh',
     borderBottomLeftRadius: 0,
@@ -61,7 +63,7 @@ const styles = {
     borderTopLeftRadius: 'var(--radius-lg)',
     borderTopRightRadius: 'var(--radius-lg)',
     backgroundColor: 'var(--surface-color)',
-    zIndex: 50,
+    zIndex: 1010,
     transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1)',
     display: 'flex',
     flexDirection: 'column',
@@ -76,6 +78,11 @@ const styles = {
   },
   closeBtn: {
     padding: '4px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center'
   },
   content: {
     padding: 'var(--space-lg)',

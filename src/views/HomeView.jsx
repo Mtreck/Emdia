@@ -6,7 +6,7 @@ export default function HomeView({ onOpenSettings, data }) {
   const { currentUser, logout } = useAuth();
   
   const profileName = currentUser?.profile?.name || data.userName;
-  const profileGrossBalance = currentUser?.profile?.grossBalance ?? data.grossBalance;
+  const profileGrossBalance = data.grossBalance;
   
   // Current month key
   const now = new Date();

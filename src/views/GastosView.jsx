@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Check, CreditCard, Calendar } from 'lucide-react';
+import { Check, CreditCard, Calendar, Trash2 } from 'lucide-react';
 import Modal from '../components/Modal';
 
-export default function GastosView({ data, toggleAccountPaidStatus }) {
+export default function GastosView({ data, toggleAccountPaidStatus, deleteAccount }) {
   const [payingAccount, setPayingAccount] = useState(null);
   
   // Define current month key: "2026-06"
@@ -37,6 +37,13 @@ export default function GastosView({ data, toggleAccountPaidStatus }) {
     }
   };
 
+  const handleDeleteClick = (acc, e) => {
+    e.stopPropagation();
+    if (window.confirm(`Deseja realmente apagar a conta "${acc.name}"?`)) {
+      deleteAccount(acc.id);
+    }
+  };
+
   return (
     <div className="animate-fade-in flex-col gap-lg" style={{ paddingBottom: '20px', paddingTop: '16px' }}>
       {/* Header Widget */}
@@ -63,8 +70,26 @@ export default function GastosView({ data, toggleAccountPaidStatus }) {
               
               return (
                 <div key={acc.id} className="glass flex-col gap-sm" style={{ padding: '16px' }}>
-                  <div className="flex-row justify-between">
-                    <span className="body-text" style={{ fontWeight: '600' }}>{acc.name}</span>
+                  <div className="flex-row justify-between" style={{ alignItems: 'center' }}>
+                    <div className="flex-row gap-sm" style={{ alignItems: 'center' }}>
+                      <span className="body-text" style={{ fontWeight: '600' }}>{acc.name}</span>
+                      <button
+                        onClick={(e) => handleDeleteClick(acc, e)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '4px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          opacity: 0.5,
+                          transition: 'opacity 0.2s',
+                        }}
+                        title="Apagar Conta"
+                      >
+                        <Trash2 size={16} color="var(--danger-red)" />
+                      </button>
+                    </div>
                     <span style={{ 
                       fontWeight: '600', 
                       color: paid ? 'var(--text-secondary)' : 'var(--text-primary)',

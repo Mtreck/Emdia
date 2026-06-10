@@ -4,7 +4,8 @@ import CurrencyInput from '../CurrencyInput';
 export default function AccountForm({ categories, onSubmit }) {
   const [type, setType] = useState('recorrente'); // 'recorrente' | 'parcelada'
   const [name, setName] = useState('');
-  const [categoryId, setCategoryId] = useState(categories[0]?.id || '');
+  const availableCategories = categories.filter(c => c.id !== 'cat-default');
+  const [categoryId, setCategoryId] = useState(availableCategories[0]?.id || '');
   
   // Recorrente fields
   const [amount, setAmount] = useState('');
@@ -25,7 +26,7 @@ export default function AccountForm({ categories, onSubmit }) {
         name,
         categoryId,
         amount: amount,
-        dueDay: parseInt(dueDay, 10)
+        dueDay: parseInt(dueDay, 10) || 5
       });
     } else {
       if (installmentAmount === '' || !installments) return;
@@ -92,7 +93,16 @@ export default function AccountForm({ categories, onSubmit }) {
           </div>
           <div className="flex-col gap-sm">
             <label className="small-text">Vencimento (Dia Útil do mês)</label>
-            <input type="number" min="1" max="31" value={dueDay} onChange={(e) => setDueDay(e.target.value)} placeholder="Ex: 5" style={styles.input} />
+            <input 
+              type="number" 
+              min="1" 
+              max="31" 
+              value={dueDay} 
+              onChange={(e) => setDueDay(e.target.value)} 
+              placeholder="Ex: 5" 
+              style={styles.input} 
+              required 
+            />
           </div>
         </>
       ) : (

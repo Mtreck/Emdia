@@ -20,7 +20,7 @@ function App() {
   const [activeModal, setActiveModal] = useState(null); // 'category', 'account', 'extra', 'settings', null
   const [authView, setAuthView] = useState('login'); // 'login' | 'register'
   
-  const { data, addCategory, addExtraExpense, addAccount, updateUserName, updateBalance, updateIncomeSources, toggleAccountPaidStatus } = useFinanceData();
+  const { data, addCategory, addExtraExpense, addAccount, updateUserName, updateBalance, updateIncomeSources, toggleAccountPaidStatus, deleteAccount } = useFinanceData();
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -52,7 +52,7 @@ function App() {
       case 'home':
         return <HomeView onOpenSettings={() => setActiveModal('settings')} data={data} />;
       case 'gastos':
-        return <GastosView data={data} toggleAccountPaidStatus={toggleAccountPaidStatus} />;
+        return <GastosView data={data} toggleAccountPaidStatus={toggleAccountPaidStatus} deleteAccount={deleteAccount} />;
       case 'relatorios':
         return <RelatoriosView data={data} />;
       default:

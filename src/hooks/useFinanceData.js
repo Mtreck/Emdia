@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const initialData = {
@@ -20,6 +20,7 @@ export function useFinanceData() {
 
   const [data, setData] = useState(initialData);
   const [isLoaded, setIsLoaded] = useState(false);
+  const lastLoadedKeyRef = useRef(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -27,8 +28,9 @@ export function useFinanceData() {
       const parsed = JSON.parse(saved);
       let migratedSources = parsed.incomeSources || [];
       if (migratedSources.length === 0) {
+        const fallbackBalance = parsed.grossBalance || currentUser?.profile?.grossBalance || 0;
         migratedSources = [
-          { id: 'source-default', name: 'Saldo Geral', balance: parsed.grossBalance || 0, color: '#39FF14' }
+          { id: 'source-default', name: 'Saldo Geral', balance: fallbackBalance, color: '#39FF14' }
         ];
       }
       setData({ 
@@ -39,13 +41,21 @@ export function useFinanceData() {
         expenses: parsed.expenses || [] 
       });
     } else {
-      setData(initialData);
+      const defaultBalance = currentUser?.profile?.grossBalance || 0;
+      setData({
+        ...initialData,
+        grossBalance: defaultBalance,
+        incomeSources: [
+          { id: 'source-default', name: 'Saldo Geral', balance: defaultBalance, color: '#39FF14' }
+        ]
+      });
     }
+    lastLoadedKeyRef.current = STORAGE_KEY;
     setIsLoaded(true);
-  }, [STORAGE_KEY]);
+  }, [STORAGE_KEY, currentUser]);
 
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && lastLoadedKeyRef.current === STORAGE_KEY) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
   }, [data, STORAGE_KEY, isLoaded]);
@@ -128,6 +138,13 @@ export function useFinanceData() {
     }));
   };
 
+  const deleteAccount = (accountId) => {
+    setData(prev => ({
+      ...prev,
+      accounts: (prev.accounts || []).filter(acc => acc.id !== accountId)
+    }));
+  };
+
   return {
     data,
     addCategory,
@@ -136,6 +153,7 @@ export function useFinanceData() {
     updateUserName,
     updateBalance,
     updateIncomeSources,
-    toggleAccountPaidStatus
+    toggleAccountPaidStatus,
+    deleteAccount
   };
 }
