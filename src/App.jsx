@@ -9,6 +9,7 @@ import CategoryForm from './components/forms/CategoryForm';
 import ExtraExpenseForm from './components/forms/ExtraExpenseForm';
 import AccountForm from './components/forms/AccountForm';
 import SettingsForm from './components/forms/SettingsForm';
+import TransferForm from './components/forms/TransferForm';
 import { useFinanceData } from './hooks/useFinanceData';
 import { useAuth } from './contexts/AuthContext';
 import LoginView from './views/LoginView';
@@ -17,10 +18,10 @@ import PWATutorial from './components/PWATutorial';
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
-  const [activeModal, setActiveModal] = useState(null); // 'category', 'account', 'extra', 'settings', null
+  const [activeModal, setActiveModal] = useState(null); // 'category', 'account', 'extra', 'settings', 'transfer', null
   const [authView, setAuthView] = useState('login'); // 'login' | 'register'
   
-  const { data, addCategory, addExtraExpense, addAccount, updateUserName, updateBalance, updateIncomeSources, toggleAccountPaidStatus, deleteAccount } = useFinanceData();
+  const { data, addCategory, updateCategory, deleteCategory, addExtraExpense, addAccount, updateAccount, addTransfer, updateUserName, updateBalance, updateIncomeSources, toggleAccountPaidStatus, deleteAccount } = useFinanceData();
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -52,7 +53,7 @@ function App() {
       case 'home':
         return <HomeView onOpenSettings={() => setActiveModal('settings')} data={data} />;
       case 'gastos':
-        return <GastosView data={data} toggleAccountPaidStatus={toggleAccountPaidStatus} deleteAccount={deleteAccount} />;
+        return <GastosView data={data} toggleAccountPaidStatus={toggleAccountPaidStatus} deleteAccount={deleteAccount} updateCategory={updateCategory} deleteCategory={deleteCategory} updateAccount={updateAccount} />;
       case 'relatorios':
         return <RelatoriosView data={data} />;
       default:
@@ -90,6 +91,20 @@ function App() {
           incomeSources={data.incomeSources}
           onSubmit={(expenseData) => {
             addExtraExpense(expenseData);
+            closeModal();
+          }} 
+        />
+      </Modal>
+
+      <Modal 
+        isOpen={activeModal === 'transfer'} 
+        onClose={closeModal} 
+        title="Transferir Saldo"
+      >
+        <TransferForm 
+          sources={data.incomeSources}
+          onSubmit={({ fromId, toId, amount }) => {
+            addTransfer(fromId, toId, amount);
             closeModal();
           }} 
         />

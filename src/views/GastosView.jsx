@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
-import { Check, CreditCard, Calendar, Trash2 } from 'lucide-react';
+import { Check, CreditCard, Calendar, Trash2, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import Modal from '../components/Modal';
+import CategoryForm from '../components/forms/CategoryForm';
+import AccountForm from '../components/forms/AccountForm';
 
-export default function GastosView({ data, toggleAccountPaidStatus, deleteAccount }) {
+export default function GastosView({ data, toggleAccountPaidStatus, deleteAccount, updateCategory, deleteCategory, updateAccount }) {
   const [payingAccount, setPayingAccount] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editingAccount, setEditingAccount] = useState(null);
   
   // Define current month key: "2026-06"
   const now = new Date();
@@ -17,12 +22,24 @@ export default function GastosView({ data, toggleAccountPaidStatus, deleteAccoun
   const totalPending = pendingAccounts.reduce((sum, acc) => sum + acc.amount, 0);
 
   // Group accounts by category
-  const categoriesWithAccounts = (data.categories || []).map(cat => {
-    return {
-      ...cat,
-      accounts: (data.accounts || []).filter(acc => acc.categoryId === cat.id)
-    };
-  }).filter(cat => cat.accounts.length > 0);
+  const regularCategories = (data.categories || []).filter(c => c.id !== 'cat-default');
+  const defaultCategory = (data.categories || []).find(c => c.id === 'cat-default');
+
+  const categoriesWithAccounts = regularCategories.map(cat => ({
+    ...cat,
+    accounts: (data.accounts || []).filter(acc => acc.categoryId === cat.id)
+  }));
+
+  if (defaultCategory) {
+    const extraExpensesThisMonth = (data.expenses || []).filter(exp => 
+      exp.createdAt && exp.createdAt.startsWith(currentMonthKey)
+    );
+    categoriesWithAccounts.push({
+      ...defaultCategory,
+      isDefault: true,
+      accounts: extraExpensesThisMonth
+    });
+  }
 
   const handlePayClick = (acc) => {
     if (isPaid(acc)) {
@@ -58,42 +75,67 @@ export default function GastosView({ data, toggleAccountPaidStatus, deleteAccoun
       </div>
 
       {/* List by Category */}
-      {categoriesWithAccounts.map(cat => (
+      {categoriesWithAccounts.map(cat => {
+        const isExpanded = expandedCategories[cat.id] !== false;
+        
+        return (
         <section key={cat.id} className="flex-col gap-sm">
-          <h2 className="h3" style={{ color: cat.color, borderBottom: `1px solid ${cat.color}40`, paddingBottom: '8px' }}>
-            {cat.name}
-          </h2>
+          <div 
+            className="flex-row justify-between" 
+            style={{ borderBottom: `1px solid ${cat.color}40`, paddingBottom: '8px', cursor: 'pointer', alignItems: 'center' }}
+            onClick={() => setExpandedCategories(prev => ({ ...prev, [cat.id]: !isExpanded }))}
+          >
+            <div className="flex-row gap-sm" style={{ alignItems: 'center' }}>
+              <h2 className="h3" style={{ color: cat.color, borderBottom: 'none', paddingBottom: 0 }}>
+                {cat.name}
+              </h2>
+              {!cat.isDefault && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setEditingCategory(cat); }}
+                  style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.5 }}
+                  title="Editar Categoria"
+                >
+                  <Pencil size={16} color={cat.color} />
+                </button>
+              )}
+            </div>
+            {isExpanded ? <ChevronUp style={{ color: cat.color }} /> : <ChevronDown style={{ color: cat.color }} />}
+          </div>
           
+          {isExpanded && (
           <div className="flex-col gap-md mt-sm">
             {cat.accounts.map(acc => {
-              const paid = isPaid(acc);
+              const isExtra = acc.id && acc.id.startsWith('exp-');
+              const paid = isExtra ? true : isPaid(acc);
               
               return (
                 <div key={acc.id} className="glass flex-col gap-sm" style={{ padding: '16px' }}>
                   <div className="flex-row justify-between" style={{ alignItems: 'center' }}>
                     <div className="flex-row gap-sm" style={{ alignItems: 'center' }}>
                       <span className="body-text" style={{ fontWeight: '600' }}>{acc.name}</span>
-                      <button
-                        onClick={(e) => handleDeleteClick(acc, e)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          padding: '4px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          opacity: 0.5,
-                          transition: 'opacity 0.2s',
-                        }}
-                        title="Apagar Conta"
-                      >
-                        <Trash2 size={16} color="var(--danger-red)" />
-                      </button>
+                      {!isExtra && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingAccount(acc); }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            opacity: 0.5,
+                            transition: 'opacity 0.2s',
+                          }}
+                          title="Editar Conta"
+                        >
+                          <Pencil size={16} color="var(--text-primary)" />
+                        </button>
+                      )}
                     </div>
                     <span style={{ 
                       fontWeight: '600', 
                       color: paid ? 'var(--text-secondary)' : 'var(--text-primary)',
-                      textDecoration: paid ? 'line-through' : 'none'
+                      textDecoration: paid && !isExtra ? 'line-through' : 'none'
                     }}>
                       R$ {acc.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
@@ -103,18 +145,21 @@ export default function GastosView({ data, toggleAccountPaidStatus, deleteAccoun
                     <div className="flex-row gap-sm small-text" style={{ alignItems: 'center', opacity: paid ? 0.5 : 1 }}>
                       {acc.type === 'recorrente' ? (
                         <><Calendar size={14} /> Dia {acc.dueDay} (Útil)</>
-                      ) : (
+                      ) : acc.type === 'parcelada' ? (
                         <><CreditCard size={14} /> Parcela {acc.installments.current}/{acc.installments.total}</>
+                      ) : (
+                        <><Calendar size={14} /> {acc.createdAt ? new Date(acc.createdAt).toLocaleDateString('pt-BR') : 'Extra'}</>
                       )}
                     </div>
                     
                     <button 
-                      onClick={() => handlePayClick(acc)}
+                      onClick={() => !isExtra && handlePayClick(acc)}
                       style={{
                         ...styles.payBtn,
                         backgroundColor: paid ? 'var(--accent-neon-green-dim)' : 'var(--danger-red)',
                         color: paid ? 'var(--accent-neon-green)' : '#fff',
-                        border: paid ? '1px solid var(--accent-neon-green)' : '1px solid var(--danger-red)'
+                        border: paid ? '1px solid var(--accent-neon-green)' : '1px solid var(--danger-red)',
+                        cursor: isExtra ? 'default' : 'pointer'
                       }}
                     >
                       {paid ? (
@@ -127,13 +172,18 @@ export default function GastosView({ data, toggleAccountPaidStatus, deleteAccoun
                 </div>
               );
             })}
+            {cat.accounts.length === 0 && (
+              <span className="small-text" style={{ opacity: 0.5, marginTop: '8px' }}>Nenhuma conta nesta categoria.</span>
+            )}
           </div>
+          )}
         </section>
-      ))}
+        );
+      })}
 
       {categoriesWithAccounts.length === 0 && (
         <div className="flex-col" style={{ alignItems: 'center', opacity: 0.5, marginTop: '40px' }}>
-          <span className="body-text">Nenhuma conta cadastrada ainda.</span>
+          <span className="body-text">Nenhuma categoria cadastrada ainda.</span>
         </div>
       )}
 
@@ -168,7 +218,11 @@ export default function GastosView({ data, toggleAccountPaidStatus, deleteAccoun
 
                 const spent = billsPaid.reduce((sum, a) => sum + a.amount, 0) +
                               extraPaid.reduce((sum, e) => sum + e.amount, 0);
-                const currentAvailable = src.balance - spent;
+                
+                const incomingTransfers = (data.transfers || []).filter(t => t.toId === src.id && t.month === currentMonthKey).reduce((s, t) => s + t.amount, 0);
+                const outgoingTransfers = (data.transfers || []).filter(t => t.fromId === src.id && t.month === currentMonthKey).reduce((s, t) => s + t.amount, 0);
+                
+                const currentAvailable = src.balance + incomingTransfers - outgoingTransfers - spent;
 
                 return (
                   <button
@@ -196,6 +250,56 @@ export default function GastosView({ data, toggleAccountPaidStatus, deleteAccoun
               })}
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Edit Category Modal */}
+      {editingCategory && (
+        <Modal 
+          isOpen={!!editingCategory} 
+          onClose={() => setEditingCategory(null)} 
+          title="Editar Categoria"
+        >
+          <CategoryForm 
+            initialName={editingCategory.name}
+            initialColor={editingCategory.color}
+            submitLabel="Salvar Categoria"
+            onSubmit={(name, color) => {
+              updateCategory(editingCategory.id, name, color);
+              setEditingCategory(null);
+            }}
+            onDelete={() => {
+              if (window.confirm('Atenção: Ao excluir a categoria, todas as contas vinculadas a ela também serão excluídas. Deseja realmente excluir?')) {
+                deleteCategory(editingCategory.id);
+                setEditingCategory(null);
+              }
+            }}
+          />
+        </Modal>
+      )}
+
+      {/* Edit Account Modal */}
+      {editingAccount && (
+        <Modal 
+          isOpen={!!editingAccount} 
+          onClose={() => setEditingAccount(null)} 
+          title="Editar Conta"
+        >
+          <AccountForm 
+            categories={data.categories}
+            initialData={editingAccount}
+            submitLabel="Salvar Conta"
+            onSubmit={(accountData) => {
+              updateAccount(editingAccount.id, accountData);
+              setEditingAccount(null);
+            }}
+            onDelete={() => {
+              if (window.confirm(`Deseja realmente apagar a conta "${editingAccount.name}"?`)) {
+                deleteAccount(editingAccount.id);
+                setEditingAccount(null);
+              }
+            }}
+          />
         </Modal>
       )}
     </div>

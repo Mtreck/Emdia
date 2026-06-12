@@ -9,9 +9,9 @@ const COLORS = [
   '#FF6B00'  // Orange
 ];
 
-export default function CategoryForm({ onSubmit }) {
-  const [name, setName] = useState('');
-  const [color, setColor] = useState(COLORS[0]);
+export default function CategoryForm({ onSubmit, initialName = '', initialColor = COLORS[0], onDelete, submitLabel = "Criar Categoria" }) {
+  const [name, setName] = useState(initialName);
+  const [color, setColor] = useState(initialColor);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -54,9 +54,20 @@ export default function CategoryForm({ onSubmit }) {
         </div>
       </div>
 
-      <button type="submit" style={styles.submitBtn}>
-        Criar Categoria
-      </button>
+      <div className="flex-col gap-sm" style={{ marginTop: 'var(--space-md)' }}>
+        <button type="submit" style={{ ...styles.submitBtn, marginTop: 0 }}>
+          {submitLabel}
+        </button>
+        {onDelete && (
+          <button 
+            type="button" 
+            onClick={onDelete} 
+            style={{ ...styles.submitBtn, marginTop: 0, backgroundColor: 'transparent', color: 'var(--danger-red)', border: '1px solid var(--danger-red)' }}
+          >
+            Excluir Categoria
+          </button>
+        )}
+      </div>
     </form>
   );
 }

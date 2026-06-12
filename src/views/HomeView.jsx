@@ -47,9 +47,12 @@ export default function HomeView({ onOpenSettings, data }) {
     const spent = billsPaid.reduce((sum, acc) => sum + acc.amount, 0) +
                   extraPaid.reduce((sum, exp) => sum + exp.amount, 0);
                   
+    const incomingTransfers = (data.transfers || []).filter(t => t.toId === src.id && t.month === currentMonthKey).reduce((s, t) => s + t.amount, 0);
+    const outgoingTransfers = (data.transfers || []).filter(t => t.fromId === src.id && t.month === currentMonthKey).reduce((s, t) => s + t.amount, 0);
+                  
     return {
       ...src,
-      available: src.balance - spent,
+      available: src.balance + incomingTransfers - outgoingTransfers - spent,
       spent
     };
   });

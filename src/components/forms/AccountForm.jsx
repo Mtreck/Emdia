@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import CurrencyInput from '../CurrencyInput';
 
-export default function AccountForm({ categories, onSubmit }) {
-  const [type, setType] = useState('recorrente'); // 'recorrente' | 'parcelada'
-  const [name, setName] = useState('');
+export default function AccountForm({ categories, onSubmit, initialData = null, onDelete, submitLabel = null }) {
+  const [type, setType] = useState(initialData?.type || 'recorrente'); // 'recorrente' | 'parcelada'
+  const [name, setName] = useState(initialData?.name || '');
   const availableCategories = categories.filter(c => c.id !== 'cat-default');
-  const [categoryId, setCategoryId] = useState(availableCategories[0]?.id || '');
+  const [categoryId, setCategoryId] = useState(initialData?.categoryId || availableCategories[0]?.id || '');
   
   // Recorrente fields
-  const [amount, setAmount] = useState('');
-  const [dueDay, setDueDay] = useState(''); // Dia útil (ex: 5)
+  const [amount, setAmount] = useState(initialData?.type === 'recorrente' ? initialData.amount : '');
+  const [dueDay, setDueDay] = useState(initialData?.dueDay || ''); // Dia útil (ex: 5)
   
   // Parcelada fields
-  const [installmentAmount, setInstallmentAmount] = useState('');
-  const [installments, setInstallments] = useState('');
+  const [installmentAmount, setInstallmentAmount] = useState(initialData?.type === 'parcelada' ? initialData.amount : '');
+  const [installments, setInstallments] = useState(initialData?.installments?.total || '');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -127,9 +127,28 @@ export default function AccountForm({ categories, onSubmit }) {
         </>
       )}
 
-      <button type="submit" style={{...styles.submitBtn, backgroundColor: type === 'recorrente' ? 'var(--accent-neon-green)' : 'var(--accent-purple)'}}>
-        Cadastrar Conta
-      </button>
+      {/* Dica sobre Bancos */}
+      <div className="flex-row gap-sm" style={{ padding: '12px', alignItems: 'flex-start', backgroundColor: 'var(--surface-color)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)', marginTop: '8px' }}>
+        <span style={{ fontSize: '16px', marginTop: '2px' }}>💡</span>
+        <span className="small-text" style={{ flex: 1, color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+          <strong>Dica de Bancos:</strong> Você escolhe de onde o dinheiro vai sair <strong>na hora de pagar</strong> a conta. Para adicionar novos bancos ou renomear o "Saldo Geral", acesse o menu de <strong>Configurações</strong>.
+        </span>
+      </div>
+
+      <div className="flex-col gap-sm" style={{ marginTop: 'var(--space-md)' }}>
+        <button type="submit" style={{...styles.submitBtn, marginTop: 0, backgroundColor: type === 'recorrente' ? 'var(--accent-neon-green)' : 'var(--accent-purple)'}}>
+          {submitLabel || 'Cadastrar Conta'}
+        </button>
+        {onDelete && (
+          <button 
+            type="button" 
+            onClick={onDelete} 
+            style={{ ...styles.submitBtn, marginTop: 0, backgroundColor: 'transparent', color: 'var(--danger-red)', border: '1px solid var(--danger-red)' }}
+          >
+            Excluir Conta
+          </button>
+        )}
+      </div>
     </form>
   );
 }

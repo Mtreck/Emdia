@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Tag, FileText, ArrowUpRight } from 'lucide-react';
+import { Plus, Tag, FileText, ArrowUpRight, Repeat } from 'lucide-react';
 
 export default function FAB({ onAction }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,6 +38,12 @@ export default function FAB({ onAction }) {
               <span style={styles.menuLabel}>Saída Extra</span>
               <div style={styles.iconWrapper} className="glass">
                 <ArrowUpRight size={18} color="var(--danger-red)" />
+              </div>
+            </button>
+            <button style={styles.menuItem} onClick={() => { onAction('transfer'); setIsOpen(false); }}>
+              <span style={styles.menuLabel}>Transferência</span>
+              <div style={styles.iconWrapper} className="glass">
+                <Repeat size={18} color="#00F0FF" />
               </div>
             </button>
           </div>

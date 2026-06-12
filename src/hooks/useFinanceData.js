@@ -11,7 +11,8 @@ const initialData = {
     { id: 'cat-default', name: 'Saídas Extras', color: 'var(--danger-red)' }
   ],
   accounts: [], // { id, name, categoryId, type: 'recorrente'|'parcelada', amount, dueDay, installments: { total, current }, paidMonths: { 'YYYY-MM': sourceId } }
-  expenses: [] // { id, name, amount, date, sourceId }
+  expenses: [], // { id, name, amount, date, sourceId }
+  transfers: [] // { id, fromId, toId, amount, date, month }
 };
 
 export function useFinanceData() {
@@ -38,7 +39,8 @@ export function useFinanceData() {
         ...parsed, 
         incomeSources: migratedSources,
         accounts: parsed.accounts || [], 
-        expenses: parsed.expenses || [] 
+        expenses: parsed.expenses || [],
+        transfers: parsed.transfers || []
       });
     } else {
       const defaultBalance = currentUser?.profile?.grossBalance || 0;
@@ -68,6 +70,21 @@ export function useFinanceData() {
     }));
   };
 
+  const updateCategory = (id, name, color) => {
+    setData(prev => ({
+      ...prev,
+      categories: (prev.categories || []).map(cat => cat.id === id ? { ...cat, name, color } : cat)
+    }));
+  };
+
+  const deleteCategory = (id) => {
+    setData(prev => ({
+      ...prev,
+      categories: (prev.categories || []).filter(cat => cat.id !== id),
+      accounts: (prev.accounts || []).filter(acc => acc.categoryId !== id)
+    }));
+  };
+
   const addAccount = (account) => {
     const newAccount = {
       id: `acc-${Date.now()}`,
@@ -81,6 +98,13 @@ export function useFinanceData() {
     }));
   };
 
+  const updateAccount = (id, updatedData) => {
+    setData(prev => ({
+      ...prev,
+      accounts: (prev.accounts || []).map(acc => acc.id === id ? { ...acc, ...updatedData } : acc)
+    }));
+  };
+
   const addExtraExpense = (expense) => {
     const newExpense = {
       id: `exp-${Date.now()}`,
@@ -90,6 +114,23 @@ export function useFinanceData() {
     setData(prev => ({
       ...prev,
       expenses: [...(prev.expenses || []), newExpense]
+    }));
+  };
+
+  const addTransfer = (fromId, toId, amount) => {
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const newTransfer = {
+      id: `trans-${Date.now()}`,
+      fromId,
+      toId,
+      amount: Number(amount),
+      date: now.toISOString(),
+      month: currentMonthKey
+    };
+    setData(prev => ({
+      ...prev,
+      transfers: [...(prev.transfers || []), newTransfer]
     }));
   };
 
@@ -148,8 +189,12 @@ export function useFinanceData() {
   return {
     data,
     addCategory,
+    updateCategory,
+    deleteCategory,
     addAccount,
+    updateAccount,
     addExtraExpense,
+    addTransfer,
     updateUserName,
     updateBalance,
     updateIncomeSources,
