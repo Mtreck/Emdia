@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
-import { Share2, Download, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Share2, Download, FileText, ChevronDown, ChevronUp, CalendarOff } from 'lucide-react';
 
-export default function RelatoriosView({ data }) {
+export default function RelatoriosView({ data, closeMonthEarly }) {
   const [expandedGroups, setExpandedGroups] = useState({});
   
   // 1. Coletar todos os meses que possuem algum histórico (mais o mês atual)
   const monthKeysSet = new Set();
-  const now = new Date();
-  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  
+  // Fallback to Date if activeMonthKey is missing (e.g. initial load)
+  let currentMonthKey = data.activeMonthKey;
+  if (!currentMonthKey) {
+    const now = new Date();
+    currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+  
   monthKeysSet.add(currentMonthKey);
 
   (data.accounts || []).forEach(acc => {
@@ -54,35 +60,10 @@ export default function RelatoriosView({ data }) {
     window.print();
   };
 
-  const handleShare = async (monthKey, monthName, totalGeral, categoriesWithAccounts, extraExpensesSorted) => {
-    let text = `📊 *Relatório EmDia - ${monthName.toUpperCase()}*\n`;
-    text += `Total Gasto: R$ ${totalGeral.toFixed(2)}\n\n`;
-    
-    text += `*CONTAS FIXAS:*\n`;
-    categoriesWithAccounts.forEach(cat => {
-      text += `[${cat.name}]\n`;
-      cat.accounts.forEach(acc => {
-        text += `- ${acc.name}: R$ ${acc.amount.toFixed(2)}\n`;
-      });
-    });
-
-    text += `\n*SAÍDAS EXTRAS:*\n`;
-    extraExpensesSorted.forEach(exp => {
-      const expDate = exp.createdAt ? new Date(exp.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
-      text += `- ${expDate ? expDate + ' ' : ''}${exp.name}: R$ ${exp.amount.toFixed(2)}\n`;
-    });
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Relatório Financeiro ${monthName}`,
-          text: text
-        });
-      } catch (err) {
-        console.error('Erro ao compartilhar', err);
-      }
-    } else {
-      alert("Seu navegador não suporta a função de compartilhar. Use o botão de PDF.");
+  const handleCloseMonth = (monthName) => {
+    if (window.confirm(`Deseja fechar o mês de ${monthName} antecipadamente? Isso resetará suas contas para o próximo mês.`)) {
+      closeMonthEarly();
+      alert(`Mês de ${monthName} fechado com sucesso!`);
     }
   };
 
@@ -265,9 +246,11 @@ export default function RelatoriosView({ data }) {
 
         {/* Ações Visíveis Apenas na Tela */}
         <div className="flex-row gap-md mt-lg print-buttons" style={{ display: 'flex', gap: '16px' }}>
-          <button onClick={() => handleShare(monthKey, monthName, totalGeral, categoriesWithAccounts, extraExpensesSorted)} style={styles.primaryBtn}>
-            <Share2 size={20} /> Compartilhar
-          </button>
+          {monthKey === currentMonthKey && (
+            <button onClick={() => handleCloseMonth(monthName)} style={{...styles.primaryBtn, backgroundColor: 'var(--danger-red)', color: 'white'}}>
+              <CalendarOff size={20} /> Fechar Mês
+            </button>
+          )}
           <button onClick={handlePrint} style={styles.secondaryBtn}>
             <Download size={20} /> PDF
           </button>

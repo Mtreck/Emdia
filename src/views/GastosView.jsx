@@ -11,8 +11,11 @@ export default function GastosView({ data, toggleAccountPaidStatus, deleteAccoun
   const [editingAccount, setEditingAccount] = useState(null);
   
   // Define current month key: "2026-06"
-  const now = new Date();
-  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  let currentMonthKey = data.activeMonthKey;
+  if (!currentMonthKey) {
+    const now = new Date();
+    currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
 
   // Helper to know if an account is paid this month
   const isPaid = (acc) => !!(acc.paidMonths && acc.paidMonths[currentMonthKey]);

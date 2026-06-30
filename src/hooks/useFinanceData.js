@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 const initialData = {
   userName: 'Nome',
   grossBalance: 0,
+  activeMonthKey: null,
   incomeSources: [
     { id: 'source-default', name: 'Saldo Geral', balance: 0, color: '#39FF14' }
   ],
@@ -25,6 +26,11 @@ export function useFinanceData() {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
+    
+    // Calculate real month
+    const now = new Date();
+    const realMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
     if (saved) {
       const parsed = JSON.parse(saved);
       let migratedSources = parsed.incomeSources || [];
@@ -34,9 +40,17 @@ export function useFinanceData() {
           { id: 'source-default', name: 'Saldo Geral', balance: fallbackBalance, color: '#39FF14' }
         ];
       }
+      
+      // Determine active month
+      let loadedMonthKey = parsed.activeMonthKey;
+      if (!loadedMonthKey || loadedMonthKey < realMonthKey) {
+        loadedMonthKey = realMonthKey;
+      }
+      
       setData({ 
         ...initialData, 
         ...parsed, 
+        activeMonthKey: loadedMonthKey,
         incomeSources: migratedSources,
         accounts: parsed.accounts || [], 
         expenses: parsed.expenses || [],
@@ -47,6 +61,7 @@ export function useFinanceData() {
       setData({
         ...initialData,
         grossBalance: defaultBalance,
+        activeMonthKey: realMonthKey,
         incomeSources: [
           { id: 'source-default', name: 'Saldo Geral', balance: defaultBalance, color: '#39FF14' }
         ]
@@ -61,6 +76,27 @@ export function useFinanceData() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
   }, [data, STORAGE_KEY, isLoaded]);
+
+  const closeMonthEarly = () => {
+    setData(prev => {
+      let currentKey = prev.activeMonthKey;
+      if (!currentKey) {
+        const now = new Date();
+        currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      }
+      let [year, month] = currentKey.split('-').map(Number);
+      month += 1;
+      if (month > 12) {
+        month = 1;
+        year += 1;
+      }
+      const nextKey = `${year}-${String(month).padStart(2, '0')}`;
+      return {
+        ...prev,
+        activeMonthKey: nextKey
+      };
+    });
+  };
 
   const addCategory = (name, color) => {
     const newCat = { id: `cat-${Date.now()}`, name, color };
@@ -199,6 +235,7 @@ export function useFinanceData() {
     updateBalance,
     updateIncomeSources,
     toggleAccountPaidStatus,
-    deleteAccount
+    deleteAccount,
+    closeMonthEarly
   };
 }

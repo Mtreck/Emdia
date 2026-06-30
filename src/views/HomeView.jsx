@@ -9,8 +9,11 @@ export default function HomeView({ onOpenSettings, data }) {
   const profileGrossBalance = data.grossBalance;
   
   // Current month key
-  const now = new Date();
-  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  let currentMonthKey = data.activeMonthKey;
+  if (!currentMonthKey) {
+    const now = new Date();
+    currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
 
   // Helper
   const isPaid = (acc) => !!(acc.paidMonths && acc.paidMonths[currentMonthKey]);
