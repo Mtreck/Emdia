@@ -20,8 +20,8 @@ export default function HomeView({ onOpenSettings, data }) {
 
   // Filters for current month
   const paidAccountsThisMonth = (data.accounts || []).filter(isPaid);
-  const extraExpensesThisMonth = (data.expenses || []).filter(exp => 
-    exp.createdAt && exp.createdAt.startsWith(currentMonthKey)
+  const extraExpensesThisMonth = (data.expenses || []).filter(exp =>
+    (exp.month || exp.createdAt?.substring(0, 7)) === currentMonthKey
   );
 
   // Calculate Balance

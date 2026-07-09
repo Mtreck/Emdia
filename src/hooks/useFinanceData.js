@@ -13,7 +13,8 @@ const initialData = {
   ],
   accounts: [], // { id, name, categoryId, type: 'recorrente'|'parcelada', amount, dueDay, installments: { total, current }, paidMonths: { 'YYYY-MM': sourceId } }
   expenses: [], // { id, name, amount, date, sourceId }
-  transfers: [] // { id, fromId, toId, amount, date, month }
+  transfers: [], // { id, fromId, toId, amount, date, month }
+  closedMonths: [] // ['YYYY-MM', ...] months explicitly closed early, kept in reports even if empty
 };
 
 export function useFinanceData() {
@@ -52,9 +53,10 @@ export function useFinanceData() {
         ...parsed, 
         activeMonthKey: loadedMonthKey,
         incomeSources: migratedSources,
-        accounts: parsed.accounts || [], 
+        accounts: parsed.accounts || [],
         expenses: parsed.expenses || [],
-        transfers: parsed.transfers || []
+        transfers: parsed.transfers || [],
+        closedMonths: parsed.closedMonths || []
       });
     } else {
       const defaultBalance = currentUser?.profile?.grossBalance || 0;
@@ -91,9 +93,13 @@ export function useFinanceData() {
         year += 1;
       }
       const nextKey = `${year}-${String(month).padStart(2, '0')}`;
+      const closedMonths = (prev.closedMonths || []).includes(currentKey)
+        ? prev.closedMonths
+        : [...(prev.closedMonths || []), currentKey];
       return {
         ...prev,
-        activeMonthKey: nextKey
+        activeMonthKey: nextKey,
+        closedMonths
       };
     });
   };
@@ -142,15 +148,23 @@ export function useFinanceData() {
   };
 
   const addExtraExpense = (expense) => {
-    const newExpense = {
-      id: `exp-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      ...expense
-    };
-    setData(prev => ({
-      ...prev,
-      expenses: [...(prev.expenses || []), newExpense]
-    }));
+    setData(prev => {
+      let monthKey = prev.activeMonthKey;
+      if (!monthKey) {
+        const now = new Date();
+        monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      }
+      const newExpense = {
+        id: `exp-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        month: monthKey,
+        ...expense
+      };
+      return {
+        ...prev,
+        expenses: [...(prev.expenses || []), newExpense]
+      };
+    });
   };
 
   const addTransfer = (fromId, toId, amount) => {

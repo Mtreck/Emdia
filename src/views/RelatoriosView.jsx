@@ -16,6 +16,9 @@ export default function RelatoriosView({ data, closeMonthEarly }) {
   
   monthKeysSet.add(currentMonthKey);
 
+  // Meses fechados antecipadamente sempre aparecem no histórico, mesmo sem movimentação
+  (data.closedMonths || []).forEach(key => monthKeysSet.add(key));
+
   (data.accounts || []).forEach(acc => {
     if (acc.paidMonths) {
       Object.keys(acc.paidMonths).forEach(key => monthKeysSet.add(key));
@@ -23,10 +26,8 @@ export default function RelatoriosView({ data, closeMonthEarly }) {
   });
 
   (data.expenses || []).forEach(exp => {
-    if (exp.createdAt) {
-      const key = exp.createdAt.substring(0, 7); // Extrai "YYYY-MM"
-      monthKeysSet.add(key);
-    }
+    const key = exp.month || exp.createdAt?.substring(0, 7); // Extrai "YYYY-MM"
+    if (key) monthKeysSet.add(key);
   });
 
   (data.transfers || []).forEach(trans => {
@@ -74,7 +75,7 @@ export default function RelatoriosView({ data, closeMonthEarly }) {
 
     // Filtrar dados DENTRO desse mês específico
     const paidAccounts = (data.accounts || []).filter(acc => !!(acc.paidMonths && acc.paidMonths[monthKey]));
-    const extraExpenses = (data.expenses || []).filter(exp => exp.createdAt && exp.createdAt.startsWith(monthKey));
+    const extraExpenses = (data.expenses || []).filter(exp => (exp.month || exp.createdAt?.substring(0, 7)) === monthKey);
 
     const totalPaid = paidAccounts.reduce((sum, acc) => sum + acc.amount, 0);
     const totalExtra = extraExpenses.reduce((sum, exp) => sum + exp.amount, 0);

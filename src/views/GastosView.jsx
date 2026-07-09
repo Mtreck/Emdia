@@ -34,8 +34,8 @@ export default function GastosView({ data, toggleAccountPaidStatus, deleteAccoun
   }));
 
   if (defaultCategory) {
-    const extraExpensesThisMonth = (data.expenses || []).filter(exp => 
-      exp.createdAt && exp.createdAt.startsWith(currentMonthKey)
+    const extraExpensesThisMonth = (data.expenses || []).filter(exp =>
+      (exp.month || exp.createdAt?.substring(0, 7)) === currentMonthKey
     );
     categoriesWithAccounts.push({
       ...defaultCategory,
@@ -211,7 +211,7 @@ export default function GastosView({ data, toggleAccountPaidStatus, deleteAccoun
                 });
                 
                 const extraPaid = (data.expenses || []).filter(e => {
-                  const isCurrentMonth = e.createdAt && e.createdAt.startsWith(currentMonthKey);
+                  const isCurrentMonth = (e.month || e.createdAt?.substring(0, 7)) === currentMonthKey;
                   if (!isCurrentMonth) return false;
                   if (src.id === 'source-default') {
                     return !e.sourceId || e.sourceId === 'source-default';
