@@ -20,8 +20,9 @@ function App() {
   const [currentView, setCurrentView] = useState('home');
   const [activeModal, setActiveModal] = useState(null); // 'category', 'account', 'extra', 'settings', 'transfer', null
   const [authView, setAuthView] = useState('login'); // 'login' | 'register'
-  
-  const { data, addCategory, updateCategory, deleteCategory, addExtraExpense, addAccount, updateAccount, addTransfer, updateUserName, updateBalance, updateIncomeSources, toggleAccountPaidStatus, deleteAccount, closeMonthEarly } = useFinanceData();
+  const [editingExpense, setEditingExpense] = useState(null);
+
+  const { data, addCategory, updateCategory, deleteCategory, addExtraExpense, addAccount, updateAccount, addTransfer, updateUserName, updateBalance, updateIncomeSources, toggleAccountPaidStatus, deleteAccount, closeMonthEarly, updateExtraExpense, deleteExtraExpense } = useFinanceData();
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -46,12 +47,26 @@ function App() {
     setActiveModal(action);
   };
 
-  const closeModal = () => setActiveModal(null);
+  const closeModal = () => {
+    setActiveModal(null);
+    setEditingExpense(null);
+  };
+
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setActiveModal('extra');
+  };
+
+  const handleDeleteExpense = (expenseId) => {
+    if (window.confirm('Deseja realmente apagar esta saída extra?')) {
+      deleteExtraExpense(expenseId);
+    }
+  };
 
   const renderView = () => {
     switch(currentView) {
       case 'home':
-        return <HomeView onOpenSettings={() => setActiveModal('settings')} data={data} />;
+        return <HomeView onOpenSettings={() => setActiveModal('settings')} data={data} onEditExpense={handleEditExpense} onDeleteExpense={handleDeleteExpense} />;
       case 'gastos':
         return <GastosView data={data} toggleAccountPaidStatus={toggleAccountPaidStatus} deleteAccount={deleteAccount} updateCategory={updateCategory} deleteCategory={deleteCategory} updateAccount={updateAccount} />;
       case 'relatorios':
@@ -82,17 +97,22 @@ function App() {
         }} />
       </Modal>
 
-      <Modal 
-        isOpen={activeModal === 'extra'} 
-        onClose={closeModal} 
-        title="Saída Extra"
+      <Modal
+        isOpen={activeModal === 'extra'}
+        onClose={closeModal}
+        title={editingExpense ? 'Editar Saída Extra' : 'Saída Extra'}
       >
-        <ExtraExpenseForm 
+        <ExtraExpenseForm
           incomeSources={data.incomeSources}
+          expense={editingExpense}
           onSubmit={(expenseData) => {
-            addExtraExpense(expenseData);
+            if (editingExpense) {
+              updateExtraExpense(editingExpense.id, expenseData);
+            } else {
+              addExtraExpense(expenseData);
+            }
             closeModal();
-          }} 
+          }}
         />
       </Modal>
 

@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowUpRight, Settings, LogOut } from 'lucide-react';
+import { ArrowUpRight, Settings, LogOut, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function HomeView({ onOpenSettings, data }) {
+export default function HomeView({ onOpenSettings, data, onEditExpense, onDeleteExpense }) {
   const { currentUser, logout } = useAuth();
   
   const profileName = currentUser?.profile?.name || data.userName;
@@ -86,12 +86,12 @@ export default function HomeView({ onOpenSettings, data }) {
 
   // Recent Transactions
   const mappedPaid = paidAccountsThisMonth.map(acc => ({
-    id: acc.id, name: acc.name, amount: acc.amount, date: 'Conta Fixa', 
-    timestamp: acc.createdAt || ''
+    id: acc.id, name: acc.name, amount: acc.amount, date: 'Conta Fixa',
+    timestamp: acc.createdAt || '', type: 'account'
   }));
   const mappedExtras = extraExpensesThisMonth.map(exp => ({
-    id: exp.id, name: exp.name, amount: exp.amount, date: 'Saída Extra', 
-    timestamp: exp.createdAt || ''
+    id: exp.id, name: exp.name, amount: exp.amount, date: 'Saída Extra',
+    timestamp: exp.createdAt || '', type: 'extra', raw: exp
   }));
 
   const recentTransactions = [...mappedPaid, ...mappedExtras]
@@ -179,9 +179,29 @@ export default function HomeView({ onOpenSettings, data }) {
                   <span className="small-text">{tx.date}</span>
                 </div>
               </div>
-              <span style={{ fontWeight: '600' }}>
-                - R$ {tx.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
+              <div className="flex-row gap-sm" style={{ alignItems: 'center' }}>
+                <span style={{ fontWeight: '600' }}>
+                  - R$ {tx.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+                {tx.type === 'extra' && (
+                  <>
+                    <button
+                      onClick={() => onEditExpense && onEditExpense(tx.raw)}
+                      style={styles.iconBtn}
+                      title="Editar Saída Extra"
+                    >
+                      <Pencil size={16} color="var(--text-secondary)" />
+                    </button>
+                    <button
+                      onClick={() => onDeleteExpense && onDeleteExpense(tx.id)}
+                      style={styles.iconBtn}
+                      title="Apagar Saída Extra"
+                    >
+                      <Trash2 size={16} color="var(--danger-red)" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           ))}
           {recentTransactions.length === 0 && (
@@ -219,6 +239,15 @@ const styles = {
   txCard: {
     padding: '16px',
     alignItems: 'center',
+  },
+  iconBtn: {
+    background: 'none',
+    border: 'none',
+    padding: '4px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    opacity: 0.6,
   },
   txIcon: {
     width: '40px',

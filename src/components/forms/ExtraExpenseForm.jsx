@@ -1,23 +1,26 @@
 import React, { useState } from 'react';
 import CurrencyInput from '../CurrencyInput';
 
-export default function ExtraExpenseForm({ onSubmit, incomeSources }) {
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [sourceId, setSourceId] = useState(incomeSources?.[0]?.id || 'source-default');
+export default function ExtraExpenseForm({ onSubmit, incomeSources, expense }) {
+  const isEditing = !!expense;
+  const [name, setName] = useState(expense?.name || '');
+  const [amount, setAmount] = useState(expense?.amount ?? '');
+  const [sourceId, setSourceId] = useState(expense?.sourceId || incomeSources?.[0]?.id || 'source-default');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim() || !amount) return;
-    
+
     onSubmit({
       name,
       amount: amount,
       sourceId: sourceId
     });
-    
-    setName('');
-    setAmount('');
+
+    if (!isEditing) {
+      setName('');
+      setAmount('');
+    }
   };
 
   return (
@@ -64,7 +67,7 @@ export default function ExtraExpenseForm({ onSubmit, incomeSources }) {
       )}
 
       <button type="submit" style={styles.submitBtn}>
-        Registrar Saída Extra
+        {isEditing ? 'Salvar Alterações' : 'Registrar Saída Extra'}
       </button>
     </form>
   );

@@ -236,6 +236,22 @@ export function useFinanceData() {
     }));
   };
 
+  const updateExtraExpense = (expenseId, updates) => {
+    setData(prev => ({
+      ...prev,
+      expenses: (prev.expenses || []).map(exp =>
+        exp.id === expenseId ? { ...exp, ...updates } : exp
+      )
+    }));
+  };
+
+  const deleteExtraExpense = (expenseId) => {
+    setData(prev => ({
+      ...prev,
+      expenses: (prev.expenses || []).filter(exp => exp.id !== expenseId)
+    }));
+  };
+
   return {
     data,
     addCategory,
@@ -250,6 +266,8 @@ export function useFinanceData() {
     updateIncomeSources,
     toggleAccountPaidStatus,
     deleteAccount,
-    closeMonthEarly
+    closeMonthEarly,
+    updateExtraExpense,
+    deleteExtraExpense
   };
 }
